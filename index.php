@@ -11,12 +11,13 @@
     class article
     {
         // declaração de propriedade
-        private $url = '';
-        private $category = '';
-        private $title = '';
-        private $author = '';
-        private $datePublished = '';
-        
+        private $url = ''; # Link to the full article
+        private $category = ''; # Link to category search on the website
+        private $subCategory =''; # A string classifying the article
+        private $title = ''; # Array with title string.
+        private $author = ''; # <a> tag with link to author's search in website
+        private $datePublished = ''; # Date of publication
+        public $plainTextCategory =''; #Category in plain text, for indexing purposes
         
         public function setArticle($itsTitle, $itsAuthor, $itsCategory, $itsDate){
             $this->title = $itsTitle;
@@ -24,6 +25,60 @@
             $this->category = $itsCategory;
             $this->datePublished = $itsDate;
         }
+        
+        #generate HTML item to be printed
+        # I realize I'm rebuilding tags I've destroyed before...
+        public function toString(){
+            $showCategory = '<a href="' . $this->category . '">' . $this->plainTextCategory .'</a>';
+            $showAutor = 'By ' . $this->author;
+            $showTitle = '<a href="' . $this->url . '">' . $this->title . '</a>';
+            $articleDiv = '<div class="articleBox">' . $showTitle . 
+                            '<br>' . $showAutor . '|' . $this->datePublished .
+                                '<br>' . $showCategory . '<br>' 
+                                    . '</div>';
+            
+            return $articleDiv;
+        }
+        
+        public function getArticleDOM (){
+            return str_get_html($this->toString());
+        }
+        
+        # Divides subcategory and category string, returning the latter as plainText for array Indexing.
+        # This 
+        private function explodeCategorySubcategory($cat){
+            $fullCat = explode('|', $cat);
+            $this->subCategory = $fullCat[0];
+            
+            $categoryAtag = str_get_html($fullCat[1]);
+            $this->category = $categoryAtag->href; #Link for the category search
+            $this->plainTextCategory = $categoryAtag->plaintext; #Indexing string
+
+        }
+        
+        private function setTitleURL($titleDate){
+            $tit = str_get_html($titleDate);
+            $this->url = $tit->href;
+            $this->title = $tit->plaintext;
+        }
+        
+        private function setAuthorDate($authorDate){
+           $trimBy = implode(explode('By ',$authorDate));
+           $littleArray = explode('|',$trimBy);
+           $authorAtag = str_get_html($littleArray[0]);
+           $this->datePublished = $littleArray[1];
+           $this->author = $authorAtag;
+        }
+        
+        # Fills the attributes of an Article object through an array of html innerText
+        public function fillAttributes($textArray){
+            
+           $this->explodeCategorySubcategory($textArray[0]);
+           $this->setTitleURL($textArray[1]);
+           $this->setAuthorDate($textArray[2]);
+            
+        }
+        
         public function setField($intId, $cont){
             switch ($intId){
                 case 0: $this->url = $cont;
@@ -70,22 +125,13 @@
     }
     # Removes upper divs, keeping only the relevant content
     function removeBloatDivs ($element){
-        
-        $list = str_get_html('<div><\div>');
-        $list->innertext = '<ul>';
-
-        /*
-        foreach ($element->find('span.field-content') as $content){
-            if($content->find('a')){
-                $content->outertext = '<li>' . $content->outertext . '</li>';   
-                $list->innertext = $list->innertext . $content->outertext;
-            }
-        }*/
+   
         foreach ($element->find('div.views-row') as $content){
             $content = $content->firstChild();
            
             $myArticle = new article;
             $i=0;
+            
             $field = $content->firstChild();
             $articleLink = $content->getAttribute('href');
             echo $articleLink . '<br>';
@@ -94,17 +140,18 @@
                 
                 $field = $content->firstChild();
                 if($field){
-                    $text = $field->innertext;
-                    $myArticle->setField($i,$text);
-                    echo $text . '<br>' ;
+                    $textArray[$i] = $field->innertext;
+                    #echo $textArray[$i] . '<br>' ;
                 }
                 # Next field containing info about the article
                 $content = $content->nextSibling();
                 $i = $i+1;    
             }
-            #$content->outertext = $articleLink;
-            
-            #$list->innertext = $list->innertext . $content->outertext;
+             
+            $myArticle->fillAttributes($textArray);
+            $art = $myArticle->getArticleDOM();
+            echo $art;
+          
         }
         
         
@@ -113,6 +160,7 @@
         #return $list;
     }
     
+    ini_set('max_execution_time',1000);#Unrealistic for my slow home connection. 
     #base url for the website
     $scienceNewsURL = 'https://www.sciencenews.org/';
     $chosenTopic = chooseTopic();
@@ -120,9 +168,13 @@
     $scrapLink = $scienceNewsURL . $chosenTopic;
     
     #Get the file from the web
-    $html = file_get_html($scrapLink);
-    #Check success
+    $attemptedConnections = 0;
     
+    
+    $html = file_get_html($scrapLink);
+   
+    
+    #Check successfull load
     if ($html !== false){
         foreach ($html->find('div') as $element){
             $att = $element->class;
@@ -135,12 +187,13 @@
                 $simplifiedElement = removeBloatDivs($element);
               
                 #echo $simplifiedElement->innertext;
-                echo $element;
-            }
-                
-            
+               # echo $element;
+            }   
         }
-        
+    }else{
+       echo 'Failed to load the news page with ' . $attemptedConnections . 'connection attempts.'; 
+       
+    }    
         /*
         $dom = new DOMDocument;
         $dom->loadHTML($html);
@@ -148,7 +201,7 @@
             if ($node->getAttribute('class') == 'article-info')
                 echo $node;
         }*/
-    }
+    
  ?>
  </body>
 </html>
