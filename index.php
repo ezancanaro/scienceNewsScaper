@@ -5,99 +5,11 @@
   </head>
  <body>
  <a href="fullStructure.php"> Original </a>
+ <a href="articleText.php"> showTextxs </a>
  <?php  
     include_once('simple_html_dom.php');
+    include_once('articleClass.php');
     
-    class article
-    {
-        // declaração de propriedade
-        private $url = ''; # Link to the full article
-        private $category = ''; # Link to category search on the website
-        private $subCategory =''; # A string classifying the article
-        private $title = ''; # Array with title string.
-        private $author = ''; # <a> tag with link to author's search in website
-        private $datePublished = ''; # Date of publication
-        public $plainTextCategory =''; #Category in plain text, for indexing purposes
-        
-        public function setArticle($itsTitle, $itsAuthor, $itsCategory, $itsDate){
-            $this->title = $itsTitle;
-            $this->author = $itsAuthor;
-            $this->category = $itsCategory;
-            $this->datePublished = $itsDate;
-        }
-        
-        #generate HTML item to be printed
-        # I realize I'm rebuilding tags I've destroyed before...
-        public function toString(){
-            $showCategory = '<a href="' . $this->category . '">' . $this->plainTextCategory .'</a>';
-            $showAutor = 'By ' . $this->author;
-            $showTitle = '<a href="' . $this->url . '">' . $this->title . '</a>';
-            $articleDiv = '<div class="articleBox">' . $showTitle . 
-                            '<br>' . $showAutor . '|' . $this->datePublished .
-                                '<br>' . $showCategory . '<br>' 
-                                    . '</div>';
-            
-            return $articleDiv;
-        }
-        
-        public function getArticleDOM (){
-            return str_get_html($this->toString());
-        }
-        
-        # Divides subcategory and category string, returning the latter as plainText for array Indexing.
-        # This 
-        private function explodeCategorySubcategory($cat){
-            $fullCat = explode('|', $cat);
-            $this->subCategory = $fullCat[0];
-            
-            $categoryAtag = str_get_html($fullCat[1]);
-            $this->category = $categoryAtag->href; #Link for the category search
-            $this->plainTextCategory = $categoryAtag->plaintext; #Indexing string
-
-        }
-        
-        private function setTitleURL($titleDate){
-            $tit = str_get_html($titleDate);
-            $this->url = $tit->href;
-            $this->title = $tit->plaintext;
-        }
-        
-        private function setAuthorDate($authorDate){
-           $trimBy = implode(explode('By ',$authorDate));
-           $littleArray = explode('|',$trimBy);
-           $authorAtag = str_get_html($littleArray[0]);
-           $this->datePublished = $littleArray[1];
-           $this->author = $authorAtag;
-        }
-        
-        # Fills the attributes of an Article object through an array of html innerText
-        public function fillAttributes($textArray){
-            
-           $this->explodeCategorySubcategory($textArray[0]);
-           $this->setTitleURL($textArray[1]);
-           $this->setAuthorDate($textArray[2]);
-            
-        }
-        
-        public function setField($intId, $cont){
-            switch ($intId){
-                case 0: $this->url = $cont;
-                        return;
-                case 1: $this->category = $cont;
-                        return;
-                case 2: $this->title = $cont;
-                        return;
-                case 3: $this->author = $cont;
-                        return;
-
-            }
-        }
-        
-    // declaração de método
-        public function displayVar() {
-            echo $this->var;
-        }
-    }
     
     
     
@@ -134,7 +46,7 @@
             
             $field = $content->firstChild();
             $articleLink = $content->getAttribute('href');
-            echo $articleLink . '<br>';
+            #echo $articleLink . '<br>';
             $content = $content->nextSibling();
             while($content != null ){
                 
@@ -150,17 +62,14 @@
              
             $myArticle->fillAttributes($textArray);
             $art = $myArticle->getArticleDOM();
-            echo $art;
-          
+            # Array of article objects;
+            $articleArray[] = $myArticle;          
         }
         
-        
-        
-        #$list->innertext = $list->innertext . '</ul>';
-        #return $list;
+        return $articleArray;
     }
     
-    ini_set('max_execution_time',1000);#Unrealistic for my slow home connection. 
+    ini_set('max_execution_time',1000);#Unrealistic but needed for my slow home connection. 
     #base url for the website
     $scienceNewsURL = 'https://www.sciencenews.org/';
     $chosenTopic = chooseTopic();
@@ -172,7 +81,7 @@
     
     
     $html = file_get_html($scrapLink);
-   
+
     
     #Check successfull load
     if ($html !== false){
@@ -182,10 +91,57 @@
                 replaceLinks($element, $scienceNewsURL);
             echo ('Featured article: ' . $element );    
             }
+            # Get the list of news
             if ($att == 'item-list'){
-                replaceLinks($element, $scienceNewsURL);    
-                $simplifiedElement = removeBloatDivs($element);
-              
+                replaceLinks($element, $scienceNewsURL);
+                # Strip elements of the website's divs
+                $simplifiedElements = removeBloatDivs($element);
+                
+                #Loop through articles and show them in rows by Category.
+                
+                $indexCat = $simplifiedElements[0]->plainTextCategory;
+                $allCategories[-1] = $simplifiedElements[0]->getCategory();
+                $columns ='';
+                $id = 0;
+                foreach($simplifiedElements as $article){
+                    if($indexCat === $article->plainTextCategory){
+                        $columns = $columns . $article->getArticleDOM()->outertext;
+                        #echo $indexCat;
+                    }else{
+                        #echo $article->plainTextCategory;
+                        $allCategories[$id] = $article->getCategory();
+                        $rows[$id] = '<div class="row">' . $columns . '</div>';
+                        $indexCat = $article->plainTextCategory;
+                        $id++;
+                        $columns = $article->getArticleDOM();
+                    }
+                    
+                }
+                $allCategories[$id+1] = $indexCat;
+                $rows[$id+1] = '<div class="row">' . $columns . '</div>';
+                $mainContainer = '<div class="container">';
+                
+                $categoryCol = '';
+                $i=0;
+                foreach($allCategories as $cat){
+                    $catColumn = '<div class="twelve columns categoryBox"
+                                    >' . $cat . '</div>'; 
+                    $categoryRow[$i] = '<div class="row">' . $catColumn . '</div>';                        
+                    $i++;
+                }
+                /* style="display: inline-block;
+                                        text-align: center;
+                                        background-color: transparent;
+                                        border-radius: 4px;
+                                        border: 1px solid #bbb;"*/
+                $i=0;                
+                foreach($rows as $row){
+                    $mainContainer = $mainContainer . $categoryRow[$i] . $row;
+                    $i++;
+                }
+                $mainContainer = $mainContainer . '</div>';
+                echo $mainContainer;
+
                 #echo $simplifiedElement->innertext;
                # echo $element;
             }   

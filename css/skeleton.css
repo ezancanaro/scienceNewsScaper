@@ -112,6 +112,24 @@
 
 }
 
+  .categoryBox {
+    width: 100%; margin-left: 0;
+    display: inline-block;
+    text-align: center;
+    background-color: transparent;
+    border-radius: 4px;
+    border: 1px solid #bbb;
+    float: left;
+    box-sizing: border-box;
+    }
+
+ .articleBox {
+    width: 100%; margin-left: 0;
+    display: inline-block;
+    text-align: center;
+    background-color: transparent;
+    
+    }
 
 /* Base Styles
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -162,9 +180,10 @@ a {
 a:hover {
   color: #0FA0CE; }
 
-
 /* Buttons
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
+
+
 .button,
 button,
 input[type="submit"],
