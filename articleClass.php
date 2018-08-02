@@ -26,10 +26,10 @@ class article
         public function toString(){
             $showCategory = '<a href="' . $this->category . '">' . $this->plainTextCategory . '</a>' ;
             $showAutor = $this->author;
-            $info = array ($this->title, $this->url);
-            $thisObjectSerial = serialize($info);
+            $info = json_encode (array ($this->title, rawurlencode($this->url)));
+            $thisObjectSerial = ($info);
             # Passing through javascript would probably be better than using GET values here.
-            $showTitle = '<a href="articleText.php?article=' . $thisObjectSerial . '">' . $this->title . '</a>';
+            $showTitle = '<a href="articleText.php?article=' . rawurlencode($this->url) . '">' . $this->title . '</a>';
             $articleDiv = '<div class="articleBox four columns">' . $showTitle . 
                             '<br>' . $showAutor . '|' . $this->datePublished .
                                 '<br>'

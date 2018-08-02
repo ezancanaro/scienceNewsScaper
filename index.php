@@ -9,7 +9,7 @@
  <?php  
     include_once('simple_html_dom.php');
     include_once('articleClass.php');
-    
+    include_once('parseDivs.php');
     
     
     
@@ -27,47 +27,7 @@
             break;
 } 
     }
-    # Replaces the local links with full URLS
-    function replaceLinks($element, $url){
-        foreach ($element->find('a') as $hyperlink){
-            $shortLink = $url . $hyperlink->href;
-            $hyperlink->href = $shortLink;
-        }
-        
-    }
-    # Removes upper divs, keeping only the relevant content
-    function removeBloatDivs ($element){
-   
-        foreach ($element->find('div.views-row') as $content){
-            $content = $content->firstChild();
-           
-            $myArticle = new article;
-            $i=0;
-            
-            $field = $content->firstChild();
-            $articleLink = $content->getAttribute('href');
-            #echo $articleLink . '<br>';
-            $content = $content->nextSibling();
-            while($content != null ){
-                
-                $field = $content->firstChild();
-                if($field){
-                    $textArray[$i] = $field->innertext;
-                    #echo $textArray[$i] . '<br>' ;
-                }
-                # Next field containing info about the article
-                $content = $content->nextSibling();
-                $i = $i+1;    
-            }
-             
-            $myArticle->fillAttributes($textArray);
-            $art = $myArticle->getArticleDOM();
-            # Array of article objects;
-            $articleArray[] = $myArticle;          
-        }
-        
-        return $articleArray;
-    }
+    
     
     ini_set('max_execution_time',1000);#Unrealistic but needed for my slow home connection. 
     #base url for the website
@@ -79,18 +39,22 @@
     #Get the file from the web
     $attemptedConnections = 0;
     
-    
     $html = file_get_html($scrapLink);
-
-    
+    $tries = 0;
+    while (!$html && $tries<=10){
+        $html = file_get_html($scrapLink);
+        sleep(1);
+        $tries++;
+    }   
     #Check successfull load
-    if ($html !== false){
+    if ($html != false){
         foreach ($html->find('div') as $element){
             $att = $element->class;
             if($att == 'article-info'){
                 replaceLinks($element, $scienceNewsURL);
             echo ('Featured article: ' . $element );    
             }
+
             # Get the list of news
             if ($att == 'item-list'){
                 replaceLinks($element, $scienceNewsURL);
@@ -98,18 +62,20 @@
                 $simplifiedElements = removeBloatDivs($element);
                 
                 #Loop through articles and show them in rows by Category.
-                
-                $indexCat = $simplifiedElements[0]->plainTextCategory;
-                $allCategories[-1] = $simplifiedElements[0]->getCategory();
+                $indexCat = $simplifiedElements[0]->plainTextCategory; #Initial values for the loop
+                $thisCat = $simplifiedElements[0]->getCategory(); #First category of articles
+                #$allCategories[-1] = array($indexCat,$simplifiedElements[0]->getCategory());
                 $columns ='';
                 $id = 0;
+                
                 foreach($simplifiedElements as $article){
                     if($indexCat === $article->plainTextCategory){
                         $columns = $columns . $article->getArticleDOM()->outertext;
                         #echo $indexCat;
                     }else{
                         #echo $article->plainTextCategory;
-                        $allCategories[$id] = $article->getCategory();
+                        $allCategories[$id] = array($indexCat,$thisCat);
+                        $thisCat = $article->getCategory();
                         $rows[$id] = '<div class="row">' . $columns . '</div>';
                         $indexCat = $article->plainTextCategory;
                         $id++;
@@ -117,23 +83,22 @@
                     }
                     
                 }
-                $allCategories[$id+1] = $indexCat;
+                $allCategories[$id+1] = array($indexCat,$thisCat);
                 $rows[$id+1] = '<div class="row">' . $columns . '</div>';
                 $mainContainer = '<div class="container">';
                 
                 $categoryCol = '';
                 $i=0;
                 foreach($allCategories as $cat){
-                    $catColumn = '<div class="twelve columns categoryBox"
-                                    >' . $cat . '</div>'; 
+                    $catColumn = '<div class="twelve columns categoryBox">' 
+                                    . '<a href="showTopicNews.php?topic=' . rawurlencode($cat[1]) 
+                                    .'">More news on ' . $cat[0] . '</a>'  
+                                    . '<a href="' . $cat[1] .'"> (Source)</a>' . 
+                                    '</div>'; 
                     $categoryRow[$i] = '<div class="row">' . $catColumn . '</div>';                        
                     $i++;
                 }
-                /* style="display: inline-block;
-                                        text-align: center;
-                                        background-color: transparent;
-                                        border-radius: 4px;
-                                        border: 1px solid #bbb;"*/
+                
                 $i=0;                
                 foreach($rows as $row){
                     $mainContainer = $mainContainer . $categoryRow[$i] . $row;
