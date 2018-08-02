@@ -9,7 +9,7 @@
     include_once('simple_html_dom.php');
     include_once('articleClass.php');
     include_once('parseDivs.php');
-    
+    error_reporting(E_ALL ^ E_WARNING); 
     define('MAIN_CONTAINER','<div class="container">');
     set_time_limit(90); 
     
@@ -17,7 +17,8 @@
     
     if( isset($_GET['topic'])){
         $topicURL = rawurldecode($_GET['topic']);
-        showArticleList($topicURL);
+        $pt = $_GET['pt'];
+        showArticleList($topicURL, $pt);
     }else{
         showArticleList('');
         #showErrorPage();
@@ -30,7 +31,7 @@
         echo $errorContainer;
     }
     
-    function showArticleList($topicURL){
+    function showArticleList($topicURL, $pt){
 
         $scrapLink = $topicURL; 
         # 'https://www.sciencenews.org//search?tt=78';      
@@ -68,7 +69,10 @@
                 $mainContainer = $mainContainer . $row;
             }
             $mainContainer = $mainContainer . '</div>';
-            echo $mainContainer;
+            $headCt = MAIN_CONTAINER . '<h4>News on ' . $pt . '   <a href="' . $topicURL . '">(Source)</a>'
+                                     . '</h4>' . '</div>';
+            
+            echo $headCt . $mainContainer;
             }
         }
         

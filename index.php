@@ -10,7 +10,8 @@
     include_once('simple_html_dom.php');
     include_once('articleClass.php');
     include_once('parseDivs.php');
-    
+    error_reporting(E_ALL ^ E_WARNING);
+    set_time_limit(90); # My house connection is really slow.     
     
     
     /*Get the arguments for this with JS in a button*/
@@ -29,7 +30,7 @@
     }
     
     
-    ini_set('max_execution_time',1000);#Unrealistic but needed for my slow home connection. 
+    #ini_set('max_execution_time',1000);#Unrealistic but needed for my slow home connection. 
     #base url for the website
     $scienceNewsURL = 'https://www.sciencenews.org/';
     $chosenTopic = chooseTopic();
@@ -92,7 +93,7 @@
                 foreach($allCategories as $cat){
                     $catColumn = '<div class="twelve columns categoryBox">' 
                                     . '<a href="showTopicNews.php?topic=' . rawurlencode($cat[1]) 
-                                    .'">More news on ' . $cat[0] . '</a>'  
+                                    .'&pt=' . $cat[0] . '">More news on ' . $cat[0] . '</a>'  
                                     . '<a href="' . $cat[1] .'"> (Source)</a>' . 
                                     '</div>'; 
                     $categoryRow[$i] = '<div class="row">' . $catColumn . '</div>';                        
