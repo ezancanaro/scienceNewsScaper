@@ -1,5 +1,11 @@
 # scienceNewsScaper
-PHP base scraper for ScienceNews.org website based on topics.
+PHP simple scraper for ScienceNews.org website based on topics.
 
-Utilizes : cURL for connections and simple_php_dom for parsing the website. Basic CSS adapted from http://getskeleton.com/.
+##Resources 
+cURL for requests and simple_php_dom for parsing the website. Basic responsive CSS adapted from http://getskeleton.com/.
 
+##To-Do with more time:
+1. Deploy in the web;
+1. Improve layout: Use a template framework to build the html elements instead of using **echo** inside the code, separating view and controller. Decide on a proper visual style and create the css;
+2. Use a database so we don't have to scrape the webpage on every access: Save the scraped articles in a database and show them from there. ScienceNews.org has a RSS feed we can use to keep it updated;
+3. Refactor some noisy code: Some sections were quite rushed and are kind of unpleasant to look at.
