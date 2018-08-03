@@ -10,7 +10,7 @@
     include_once('parseDivs.php');
     error_reporting(E_ALL ^ E_WARNING); 
     define('MAIN_CONTAINER','<div class="container">');
-    
+    set_time_limit(90); #just in case
     
     
     

@@ -8,7 +8,8 @@
     include_once('simple_html_dom.php');
     include_once('articleClass.php');
     error_reporting(E_ALL ^ E_WARNING);
-    
+    set_time_limit(90); #just in case
+        
     define('MAIN_CONTAINER','<div class="container">');
 
     if( isset($_GET['article'])){
