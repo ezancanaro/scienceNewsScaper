@@ -4,14 +4,13 @@
   <link rel="stylesheet" type="text/css" href="css/skeleton.css" />
   </head>
  <body>
- <a href="fullStructure.php"> Original </a>
  <?php  
     include_once('simple_html_dom.php');
     include_once('articleClass.php');
     include_once('parseDivs.php');
     error_reporting(E_ALL ^ E_WARNING); 
     define('MAIN_CONTAINER','<div class="container">');
-    set_time_limit(90); 
+    
     
     
     
@@ -33,10 +32,17 @@
     
     function showArticleList($topicURL, $pt){
 
-        $scrapLink = $topicURL; 
+        $scrapLink = $topicURL;
+        $curl = curl_init(); 
+        curl_setopt($curl, CURLOPT_URL, $scrapLink);  
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);  
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);  
+        $str = curl_exec($curl);
+        curl_close($curl);
+        $html = str_get_html($str);        
         # 'https://www.sciencenews.org//search?tt=78';      
         
-        $html = file_get_html($scrapLink);
+        #$html = file_get_html($scrapLink);
         $tries = 0;
         while (!$html && $tries<=10){
             $html = file_get_html($scrapLink);
@@ -58,7 +64,7 @@
                 foreach($articles as $article){
                     
                     $title = changeAtag($article[0]);
-                    $row = '<div class="row">' . $title
+                    $row = '<div class="row articleTextBox">' . $title
                             . $article[1]->innertext . '</div>';
                     $rows[] = $row;
                 }
@@ -89,4 +95,7 @@
     
 ?>
  </body>
+ <footer>
+  <p>Eric Zancanaro: ericzanca@gmail.com</p>
+</footer>
 </html>   
